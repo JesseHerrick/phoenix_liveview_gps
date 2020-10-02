@@ -23,27 +23,24 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 let Hooks = {}
 Hooks.InitGps = {
   mounted() {
-    // navigator.geolocation.watchPosition((pos) => {
-    // window.setInterval(() => {
-      // navigator.geolocation.getCurrentPosition(
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          this.pushEvent("location_update", {latitude: pos.coords.latitude, longitude: pos.coords.longitude, timestamp: pos.timestamp})
-        },
-        (err) => console.log(err),
-        { maximumAge: 0, enableHighAccuracy: true }
-      )
-    // }, 1000)
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        this.pushEvent("location_update", {latitude: pos.coords.latitude, longitude: pos.coords.longitude, timestamp: pos.timestamp})
+      },
+      (err) => console.log(err),
+      { maximumAge: 0, enableHighAccuracy: true }
+    )
   }
 }
 
 Hooks.Map = {
   mounted() {
-    mapboxgl.accessToken = 'pk.eyJ1IjoiamVzc2VoZXJyaWNrIiwiYSI6ImNqeWFibXRpMTBkZTIza3MzMWgwdDVrdWIifQ.SYqKlVP0OngpIGSphYyTNg';
+    mapboxgl.accessToken = window.mapboxAccessToken
     var map = new mapboxgl.Map({
       container: "map",
       style: 'mapbox://styles/mapbox/streets-v11',
-      zoom: 14
+      zoom: 14,
+      center: [-82.9967, 39.9504]
     });
 
     map.on("load", () => {
@@ -51,7 +48,7 @@ Hooks.Map = {
         "type": "geojson",
         "data": {
           "type": "Point",
-          "coordinates": [39, -83]
+          "coordinates": [-82.9967, 39.9504]
         }
       })
 
@@ -67,23 +64,25 @@ Hooks.Map = {
     })
 
     this.handleEvent("position", (coords) => {
-      let coordData = {
-        "type": "Point",
-        "coordinates": [coords.longitude, coords.latitude]
-      }
+      map.on("load", () => {
+        let coordData = {
+          "type": "Point",
+          "coordinates": [coords.longitude, coords.latitude]
+        }
 
-      map.getSource("location").setData(coordData)
+        map.getSource("location").setData(coordData)
 
-      map.flyTo({
-        center: [
-          coords.longitude,
-          coords.latitude
-        ],
-        zoom: 18
-      })
-      map.addLayer({
-        id: "me",
-        type: "symbol",
+        map.flyTo({
+          center: [
+            coords.longitude,
+            coords.latitude
+          ],
+          zoom: 18
+        })
+        map.addLayer({
+          id: "me",
+          type: "symbol",
+        })
       })
     })
   }

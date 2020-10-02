@@ -35,7 +35,7 @@ defmodule GpsWeb.MapLive.Show do
   end
 
   @impl true
-  def handle_info(%Broadcast{event: "location_update", payload: %{"longitude" => longitude, "latitude" => latitude, "timestamp" => timestamp} = coords}, socket) do
+  def handle_info(%Broadcast{event: "location_update", payload: %{longitude: longitude, latitude: latitude, timestamp: timestamp} = coords}, socket) do
     {:noreply,
       socket
       |> assign(:longitude, longitude)

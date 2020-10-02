@@ -1,6 +1,5 @@
 defmodule GpsWeb.MapLive.Record do
   use GpsWeb, :live_view
-  alias Phoenix.Socket.Broadcast
 
   @impl true
   def render(assigns) do
@@ -25,15 +24,24 @@ defmodule GpsWeb.MapLive.Record do
   end
 
   @impl true
-  def handle_event("location_update", %{"longitude" => longitude, "latitude" => latitude, "timestamp" => timestamp} = coords, %{assigns: %{id: id}} = socket) do
-    GpsWeb.Endpoint.broadcast_from!(self(), "map:" <> id, "location_update", coords)
-    formatted_timestamp =
-    :ets.insert(:last_known_location, {"map:" <> id, timestamp, longitude, latitude})
+  def handle_event("location_update", %{"timestamp" => timestamp, "longitude" => longitude, "latitude" => latitude}, %{assigns: %{id: id}} = socket) do
+    key = "map:" <> id
+
+    formatted_coords = %{timestamp: formatted_time(timestamp), longitude: longitude, latitude: latitude}
+
+    GpsWeb.Endpoint.broadcast_from!(self(), key, "location_update", formatted_coords)
+    :ets.insert(:last_known_location, {key, formatted_time(timestamp), longitude, latitude})
 
     {:noreply,
       socket
-      |> assign(longitude: longitude, latitude: latitude, timestamp: timestamp)
-      |> push_event("position", coords)
+      |> assign(formatted_coords)
+      |> push_event("position", formatted_coords)
     }
+  end
+
+  defp formatted_time(timestamp) do
+    timestamp
+    |> DateTime.from_unix!(:millisecond)
+    |> DateTime.shift_zone!("America/New_York")
   end
 end
